@@ -1,0 +1,119 @@
+#include <Windows.h>
+#include <winbase.h>
+#include <Lmcons.h>
+#include <limits.h>
+#include <iostream>
+#include <filesystem>
+#include <experimental/filesystem>
+#include <string>
+#include <cstring>
+#include <processthreadsapi.h>
+#include <wtsapi32.h>
+
+
+using namespace std::experimental::filesystem::v1;
+using namespace std;
+
+void getFolderInfo(string filePath, unsigned long long dirSize);
+long long getFolderSize(path fPath, long long subDirSize);
+string getCurrentUserRunning();
+void test();
+
+int main()
+{
+    long long dirSize = 0;
+    //test();
+    string filePath = "C:\\users";
+    string cUser;
+    string cUserPath;
+    string cUserRunningPath;
+    
+    cUser = getCurrentUserRunning();
+    cUserRunningPath = filePath + "\\" + cUser;
+
+    cout << "User Running :" << cUser << endl;
+    cout << endl;
+
+    getFolderInfo(filePath, dirSize);
+    
+
+    system("pause");
+}
+
+void getFolderInfo(string filePath, unsigned long long dirSize)
+{
+    long long fSize = 0;
+    path folderPath(filePath);
+    if (exists(folderPath))
+    {
+        directory_iterator end_directory;
+        for (auto& d: directory_iterator(folderPath))
+        {
+            if (!is_directory(d))
+            {
+                fSize += file_size(d);
+                cout << d << "  " << fSize << '\n';
+            }
+            else
+            {
+                path fPath = d;
+                long long subDirSize = 0;
+                subDirSize += getFolderSize(fPath, 0);
+                cout << d << "     " << subDirSize << '\n';
+            }
+        }
+    }
+}
+long long getFolderSize(path fPath, long long subDirSize)
+{
+    long long subFSize = 0;
+    path subFolderPath(fPath);
+    if (exists(subFolderPath))
+    {
+        directory_iterator end_directory;
+        for (auto& sd : directory_iterator(subFolderPath))
+        {
+            try{
+                if (!is_directory(sd))
+                {
+                    subFSize += file_size(sd);
+                }
+                else
+                {
+                    subFSize += getFolderSize(sd, subFSize);
+
+                }
+            }
+            catch (exception& e) {} //{ cout << e.what() << endl; }
+        }
+    }
+    return subFSize;
+}
+string getCurrentUserRunning()
+{
+    string userString;
+
+    TCHAR name[UNLEN + 1];
+    DWORD size = UNLEN + 1;
+
+    if (GetUserName((TCHAR*)name, &size))
+    {} 
+    else 
+    {
+        userString = "ERROR";
+    }
+    std::string str;
+
+#ifndef UNICODE
+    str = name;
+#else
+    std::wstring wStr = name;
+    str = std::string(wStr.begin(), wStr.end());
+#endif
+    userString = str;
+    return userString;
+}
+void test()
+{
+    cout << "test passed" << endl;
+}
